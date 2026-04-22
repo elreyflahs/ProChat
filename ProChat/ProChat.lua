@@ -22,6 +22,16 @@ local filterColors = {
     ["FOSO"] = "FF69B4", ["SO"] = "FF0000", ["TODAS"] = "B0B0B0",
 }
 
+-- --- FUNCIONES DE PERSISTENCIA Y MOVIMIENTO ---
+local function UpdateMinimapPos()
+    local angle = ProChatDB.mmAngle or 45
+    BDM_Minimap:SetPoint("TOPLEFT", Minimap, "TOPLEFT", 52 - (80 * cos(angle)), (80 * sin(angle)) - 52)
+end
+
+local function SaveWindowState(state)
+    if ProChatDB then ProChatDB.showWindows = state end
+end
+
 local function RefreshChatWindow()
     if not BDM_ChatWin_Text then return end
     BDM_ChatWin_Text:Clear()
@@ -80,6 +90,13 @@ local function CreateAdvancedWindow(name, title)
     f:SetBackdrop({bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border", tile = true, tileSize = 32, edgeSize = 32, insets = {8,8,8,8}})
 
     local close = CreateFrame("Button", nil, f, "UIPanelCloseButton"); close:SetPoint("TOPRIGHT", -5, -5)
+    close:SetScript("OnClick", function() 
+        f:Hide() 
+        if name == "BDM_ChatWin" then 
+            raidWin:Hide() 
+            SaveWindowState(false) 
+        end 
+    end)
     
     local tBtn = CreateFrame("Button", nil, f); tBtn:SetSize(width - 40, 25); tBtn:SetPoint("TOP", 0, -8)
     local t = tBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge"); t:SetPoint("CENTER", 0, 0); t:SetText(title)
@@ -131,7 +148,6 @@ UIDropDownMenu_Initialize(chanDrop, function()
         info.func = function(self) 
             selectedChannelName = self.value
             UIDropDownMenu_SetText(chanDrop, self.value)
-            -- Limpiar historial visual al cambiar de canal para evitar confusión
             chatWin.text:Clear()
             RefreshChatWindow()
         end
@@ -194,20 +210,38 @@ globalClear:SetScript("OnClick", function()
     UpdateRaidList()
 end)
 
--- --- MINIMAPA ---
-local mm = CreateFrame("Button", "BDM_Minimap", Minimap); mm:SetSize(33, 33); mm:SetPoint("TOPLEFT"); mm:EnableMouse(true); mm:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+-- --- MINIMAPA (CON MOVIMIENTO) ---
+local mm = CreateFrame("Button", "BDM_Minimap", Minimap); mm:SetSize(33, 33); mm:EnableMouse(true); mm:SetFrameStrata("MEDIUM"); mm:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
 local icon = mm:CreateTexture(nil, "BACKGROUND"); icon:SetTexture("Interface\\Icons\\INV_Misc_Note_02"); icon:SetSize(20, 20); icon:SetPoint("CENTER")
 local border = mm:CreateTexture(nil, "OVERLAY"); border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder"); border:SetSize(52, 52); border:SetPoint("TOPLEFT")
 
+mm:RegisterForDrag("LeftButton")
+mm:SetScript("OnDragStart", function(self) self:SetScript("OnUpdate", function()
+    local xpos, ypos = GetCursorPosition()
+    local xmin, ymin = Minimap:GetLeft(), Minimap:GetBottom()
+    local scale = Minimap:GetEffectiveScale()
+    local x = (xmin + (Minimap:GetWidth()/2)) - (xpos/scale)
+    local y = (ypos/scale) - (ymin + (Minimap:GetHeight()/2))
+    ProChatDB.mmAngle = math.deg(math.atan2(y, x))
+    UpdateMinimapPos()
+end) end)
+mm:SetScript("OnDragStop", function(self) self:SetScript("OnUpdate", nil) end)
+
 mm:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT"); GameTooltip:AddLine("|cffA335EEProChat "..CURRENT_VERSION.."|r")
-    GameTooltip:AddLine("Click para mostrar/ocultar", 1, 1, 1); GameTooltip:AddLine("Mayús + Click para ocultar icono", 1, 1, 1); GameTooltip:AddLine("Ctrl + Click para Info", 1, 1, 1); GameTooltip:Show()
+    GameTooltip:AddLine("Click: Mostrar/Ocultar\nArrastrar: Mover icono", 1, 1, 1); GameTooltip:Show()
 end)
 mm:SetScript("OnLeave", function() GameTooltip:Hide() end)
 mm:SetScript("OnClick", function(self)
     if IsControlKeyDown() then credWin:Show()
     elseif IsShiftKeyDown() then self:Hide(); PC_CheckMM:SetChecked(false)
-    else if chatWin:IsVisible() then chatWin:Hide(); raidWin:Hide() else chatWin:Show(); if showRaidWin then raidWin:Show() end end end
+    else 
+        if chatWin:IsVisible() then 
+            chatWin:Hide(); raidWin:Hide(); SaveWindowState(false)
+        else 
+            chatWin:Show(); if showRaidWin then raidWin:Show() end; SaveWindowState(true)
+        end 
+    end
 end)
 
 -- --- COMANDOS ---
@@ -215,9 +249,16 @@ SLASH_PROCHAT1 = "/pc"; SLASH_PROCHAT2 = "/prochat"
 SlashCmdList["PROCHAT"] = function(msg)
     if msg == "restart" then
         chatWin:SetSize(800, 420); chatWin:SetPoint("CENTER"); raidWin:SetSize(250, 420); raidWin:SetPoint("CENTER", 530, 0)
-        scaleSlider:SetValue(8); if ProChatDB then ProChatDB.firstRun = nil end
-        welcomeWin:Show(); print("|cffA335EEProChat:|r ProChat reiniciado.")
-    else if chatWin:IsVisible() then chatWin:Hide(); raidWin:Hide() else chatWin:Show(); if showRaidWin then raidWin:Show() end end end
+        scaleSlider:SetValue(8); ProChatDB.firstRun = nil; ProChatDB.mmAngle = 45; UpdateMinimapPos()
+        welcomeWin:Show(); SaveWindowState(true)
+        print("|cffA335EEProChat:|r ProChat reiniciado.")
+    else 
+        if chatWin:IsVisible() then 
+            chatWin:Hide(); raidWin:Hide(); SaveWindowState(false)
+        else 
+            chatWin:Show(); if showRaidWin then raidWin:Show() end; SaveWindowState(true)
+        end 
+    end
 end
 
 -- --- LISTENER ---
@@ -226,13 +267,23 @@ listener:RegisterEvent("CHAT_MSG_CHANNEL"); listener:RegisterEvent("ADDON_LOADED
 listener:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" and select(1, ...) == "ProChat" then
         if not ProChatDB then ProChatDB = {} end
+        if ProChatDB.mmAngle == nil then ProChatDB.mmAngle = 45 end
+        if ProChatDB.showWindows == nil then ProChatDB.showWindows = true end
         if ProChatDB.firstRun == nil then welcomeWin:Show(); ProChatDB.firstRun = false end
+        
+        -- Aplicar estado guardado
+        UpdateMinimapPos()
+        if ProChatDB.showWindows then 
+            chatWin:Show()
+            if showRaidWin then raidWin:Show() end
+        else 
+            chatWin:Hide(); raidWin:Hide()
+        end
+
     elseif event == "PLAYER_ENTERING_WORLD" then
         print("|cffA335EEProChat:|r Cargado. Versión |cffffffff"..CURRENT_VERSION.."|r Estado: |cff00ff00Addon Actualizado|r.")
     elseif event == "CHAT_MSG_CHANNEL" then
         local msg, sender, _, _, _, _, _, _, chanName = ...
-        
-        -- OPTIMIZACION DE CAPTURA: Comprobamos si el nombre del canal contiene lo seleccionado
         if not chatWin:IsVisible() or not selectedChannelName or not string.find(chanName:upper(), selectedChannelName:upper()) then return end
         
         local now = GetTime()
