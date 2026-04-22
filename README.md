@@ -9,7 +9,7 @@ Asistente avanzado de filtrado de chat y gestión de líderes de raids para serv
 
 ## 🛠️ Instalación
 1. Descarga el archivo `ProChat-3.3.5.zip` desde el botón **Code-Download Zip** o desde la sección de **Releases**.
-2. Descomprime el contenido en tu carpeta de WoW: `Interface\AddOns\`.
+2. Descomprime la carpeta `ProChat` que se encuentra dentro de `ProChat-3.3.5` en tu carpeta de Addons de WoW: `Interface\AddOns\`.
 3. Asegúrate de pegar solo la carpeta `ProChat` en tu carpeta `Addons` y que la ruta sea la siguiente: `Interface\AddOns\ProChat`.
 
 ## ⌨️ Comandos
