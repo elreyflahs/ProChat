@@ -17,7 +17,7 @@ Asistente avanzado de filtrado de chat y antispam para jugadores de servidores p
     * **Modo "Ocultar Grises":** Filtra automáticamente mensajes irrelevantes que no tengan que ver con la búsqueda de grupo (LFG).
 
 ## 🛠️ Instalación
-1. Descarga el archivo `ProChat-3.3.5.zip` desde el botón verde **Code-Download Zip** o desde la sección de **Releases** (Versión actual de ProChat `v4.1.1`).
+1. Descarga el archivo `ProChat-3.3.5.zip` desde el botón verde **Code-Download Zip** o desde la sección de **Releases** (Versión actual de ProChat `v4.2.3`).
 2. Descomprime la carpeta `ProChat` que se encuentra dentro de `ProChat-3.3.5` en tu carpeta de Addons de WoW: `Interface\AddOns\`.
 3. Asegúrate de pegar solo la carpeta `ProChat` en tu carpeta `Addons` y que la ruta sea la siguiente: `Interface\AddOns\ProChat`.
 
