@@ -1,5 +1,5 @@
 -- PROCHAT 3.3.5 - By El Rey Flahs
-local CURRENT_VERSION = "4.1.1"
+local CURRENT_VERSION = "4.2.3"
 local keywords = {"ICC", "SR", "ARCHA", "TOC", "FOSO", "NAXX", "ULDUAR", "SEMANAL", "VIAJEROS", "SO"}
 local userMessages, history, raidGroups, collapsed = { ["TODAS"] = {} }, { ["TODAS"] = {} }, {}, {}
 
@@ -13,13 +13,30 @@ for _, k in ipairs(keywords) do
     history[k], raidGroups[k], collapsed[k] = {}, {}, false 
 end
 
-local selectedChannelName, selectedContentFilter = nil, "TODAS"
+local selectedChannels, selectedContentFilter = {}, "TODAS"
 local filterTime, hideGrays, showRaidWin, searchTerm = 60, false, true, ""
 
 local filterColors = {
     ["ICC"] = "81DDF0", ["SR"] = "FF8000", ["ARCHA"] = "E6CC80", ["SEMANAL"] = "0070DE",
     ["NAXX"] = "32CD32", ["ULDUAR"] = "D2B48C", ["TOC"] = "FFFF00", ["VIAJEROS"] = "A335EE",
     ["FOSO"] = "FF69B4", ["SO"] = "FF0000", ["TODAS"] = "B0B0B0",
+}
+
+local classColors = {
+    ["WARRIOR"] = "C79C6E", ["PALADIN"] = "F58CBA", ["HUNTER"] = "ABD473",
+    ["ROGUE"] = "FFF569", ["PRIEST"] = "FFFFFF", ["DEATHKNIGHT"] = "C41F3B",
+    ["SHAMAN"] = "0070DE", ["MAGE"] = "69CCF0", ["WARLOCK"] = "9482C9",
+    ["DRUID"] = "FF7D0A"
+}
+
+local channelTags = {
+    ["DECIR"]     = {t="D", c="ffffff"}, -- Blanco
+    ["GRITAR"]    = {t="Y", c="ff4040"}, -- Rojo
+    ["HERMANDAD"] = {t="H", c="40ff40"}, -- Verde
+    ["COMERCIO"]  = {t="C", c="ffc0c0"}, -- Rosa/Naranja
+    ["GENERAL"]   = {t="G", c="ffc0c0"}, -- Rosa/Naranja
+    ["POSADA"]    = {t="P", c="ffc0c0"}, -- Rosa/Naranja
+    ["BUSCARGRUPO"] = {t="B", c="ffc0c0"}, -- Rosa/Naranja
 }
 
 -- Registrar ventanas para que se cierren con la tecla ESC
@@ -76,7 +93,7 @@ credWin:SetSize(380, 320); credWin:SetPoint("CENTER"); credWin:Hide(); credWin:S
 credWin:SetBackdrop({bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border", tile = true, tileSize = 32, edgeSize = 32, insets = {8,8,8,8}})
 local cT = credWin:CreateFontString(nil, "OVERLAY", "GameFontNormal"); cT:SetPoint("TOP", 0, -15); cT:SetText("|cffA335EECréditos y Comandos de ProChat|r")
 local cX = credWin:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); cX:SetPoint("TOPLEFT", 20, -45); cX:SetWidth(340); cX:SetJustifyH("LEFT")
-cX:SetText("Creado por |cffffffffEl Rey Flahs|r.\n\n|cffFFFF00COMANDOS DISPONIBLES:|r\n\n|cffFFD100/pc|r o |cffFFD100/prochat|r\nUsa este comando para abrir o cerrar rápidamente el panel principal del addon.\n\n|cffFFD100/pc restart|r\nRestablece las ventanas a su posición original, reinicia los tamaños, vuelve a mostrar la bienvenida y activa todos los paneles por defecto.\n\n|cff00ff00Repositorio:|r github.com/elreyflahs/ProChat")
+cX:SetText("Creado por |cffffffffEl Rey Flahs|r.\n\n|cffFFFF00COMANDOS DISPONIBLES:|r\n\n|cffFFD100/pc|r o |cffFFD100/prochat|r\nUsa este comando para abrir o cerrar rápidamente el panel principal del addon.\n\n|cffFFD100/pc reset|r\nRestablece las ventanas a su posición original, reinicia los tamaños, vuelve a mostrar la bienvenida y activa todos los paneles por defecto.\n\n|cff00ff00Repositorio:|r github.com/elreyflahs/ProChat")
 local cC = CreateFrame("Button", nil, credWin, "UIPanelButtonTemplate"); cC:SetSize(80, 22); cC:SetPoint("BOTTOM", 0, 15); cC:SetText("Cerrar"); cC:SetScript("OnClick", function() credWin:Hide() end)
 
 local welcomeWin = CreateFrame("Frame", "BDM_WelcomeWin", UIParent)
@@ -148,12 +165,36 @@ AddLabel("Seleccionar canal:", -160, chatWin); AddLabel("Seleccionar Mazmorra:",
 
 local chanDrop = CreateFrame("Frame", "BDM_ChanDrop", chatWin, "UIDropDownMenuTemplate"); chanDrop:SetPoint("TOP", -170, -85); UIDropDownMenu_SetWidth(chanDrop, 100)
 UIDropDownMenu_Initialize(chanDrop, function()
+    
+    local extra = {"Decir", "Gritar", "Hermandad"}
+    for _, name in ipairs(extra) do
+        local info = UIDropDownMenu_CreateInfo()
+        info.text, info.value = name, name
+        info.keepShownOnClick, info.isNotRadio = true, true
+        info.checked = selectedChannels[name:upper()]
+        info.func = function(self)
+            selectedChannels[name:upper()] = self.checked
+            local count = 0
+            for k, v in pairs(selectedChannels) do if v then count = count + 1 end end
+            UIDropDownMenu_SetText(chanDrop, count .. " Canales")
+            chatWin.text:Clear()
+            RefreshChatWindow()
+        end
+        UIDropDownMenu_AddButton(info)
+    end
+
     local channels = { GetChannelList() }
     for i = 1, #channels, 2 do
-        local info = UIDropDownMenu_CreateInfo(); info.text, info.value = channels[i+1], channels[i+1]
-        info.func = function(self) 
-            selectedChannelName = self.value
-            UIDropDownMenu_SetText(chanDrop, self.value)
+        local name = channels[i+1]
+        local info = UIDropDownMenu_CreateInfo()
+        info.text, info.value = name, name
+        info.keepShownOnClick, info.isNotRadio = true, true
+        info.checked = selectedChannels[name:upper()]
+        info.func = function(self)
+            selectedChannels[name:upper()] = self.checked
+            local count = 0
+            for k, v in pairs(selectedChannels) do if v then count = count + 1 end end
+            UIDropDownMenu_SetText(chanDrop, count .. " Canales")
             chatWin.text:Clear()
             RefreshChatWindow()
         end
@@ -163,11 +204,17 @@ end)
 
 local filterDrop = CreateFrame("Frame", "BDM_FilterDrop", chatWin, "UIDropDownMenuTemplate"); filterDrop:SetPoint("TOP", -10, -85); UIDropDownMenu_SetWidth(filterDrop, 110)
 UIDropDownMenu_Initialize(filterDrop, function()
-    local opts = {"TODAS"}; for _, k in ipairs(keywords) do table.insert(opts, k) end
+    local opts = {"TODAS"}
+    for _, k in ipairs(keywords) do table.insert(opts, k) end
     for _, opt in ipairs(opts) do
-        local info = UIDropDownMenu_CreateInfo(); local c = filterColors[opt] or "ffffff"
+        local info = UIDropDownMenu_CreateInfo()
+        local c = filterColors[opt] or "ffffff"
         info.text, info.value = "|cff"..c..opt.."|r", opt
-        info.func = function(self) selectedContentFilter = self.value; UIDropDownMenu_SetText(filterDrop, "|cff"..c..self.value.."|r"); RefreshChatWindow() end
+        info.func = function(self) 
+            selectedContentFilter = self.value
+            UIDropDownMenu_SetText(filterDrop, "|cff"..c..self.value.."|r")
+            RefreshChatWindow() 
+        end
         UIDropDownMenu_AddButton(info)
     end
 end)
@@ -253,11 +300,27 @@ end)
 -- --- COMANDOS ---
 SLASH_PROCHAT1 = "/pc"; SLASH_PROCHAT2 = "/prochat"
 SlashCmdList["PROCHAT"] = function(msg)
-    if msg == "restart" then
-        chatWin:SetSize(800, 420); chatWin:SetPoint("CENTER"); raidWin:SetSize(250, 420); raidWin:SetPoint("CENTER", 530, 0)
-        scaleSlider:SetValue(8); ProChatDB.firstRun = nil; ProChatDB.mmAngle = 45; UpdateMinimapPos()
+    if msg == "reset" then
+        
+        chatWin:SetSize(800, 420); chatWin:SetPoint("CENTER")
+        raidWin:SetSize(250, 420); raidWin:SetPoint("CENTER", 530, 0)
+        scaleSlider:SetValue(8)
+        
+        for k in pairs(history) do history[k] = {} end
+        for k in pairs(raidGroups) do raidGroups[k] = {} end
+        for k in pairs(selectedChannels) do selectedChannels[k] = false end
+        
+        searchTerm = ""; searchBox:SetText("")
+        selectedContentFilter = "TODAS"
+        UIDropDownMenu_SetText(filterDrop, "TODAS")
+        UIDropDownMenu_SetText(chanDrop, "0 Canales")
+        
+        ProChatDB.mmAngle = 45; UpdateMinimapPos()
         welcomeWin:Show(); SaveWindowState(true)
-        print("|cffA335EEProChat:|r ProChat reiniciado.")
+        chatWin:Show(); if showRaidWin then raidWin:Show() end
+        
+        RefreshChatWindow(); UpdateRaidList()
+        print("|cffA335EEProChat:|r El addon ha sido restablecido por completo.")
     else 
         if chatWin:IsVisible() then 
             chatWin:Hide(); raidWin:Hide(); SaveWindowState(false)
@@ -267,9 +330,12 @@ SlashCmdList["PROCHAT"] = function(msg)
     end
 end
 
--- --- LISTENER ---
+-- --- LISTENERs ---
 local listener = CreateFrame("Frame")
 listener:RegisterEvent("CHAT_MSG_CHANNEL"); listener:RegisterEvent("ADDON_LOADED"); listener:RegisterEvent("PLAYER_ENTERING_WORLD")
+listener:RegisterEvent("CHAT_MSG_SAY")
+listener:RegisterEvent("CHAT_MSG_YELL")
+listener:RegisterEvent("CHAT_MSG_GUILD")
 listener:RegisterEvent("PLAYER_REGEN_DISABLED") -- Detectar inicio de combate
 
 listener:SetScript("OnEvent", function(self, event, ...)
@@ -292,7 +358,7 @@ listener:SetScript("OnEvent", function(self, event, ...)
         print("|cffA335EEProChat:|r Cargado. Versión |cffffffff"..CURRENT_VERSION.."|r Estado: |cff00ff00Addon Actualizado|r.")
 
     elseif event == "PLAYER_REGEN_DISABLED" then
-        -- Ocultar ventanas automáticamente al entrar en combate
+        -- Ocultar ventanas automáticamente al entrar en combate v4.1
         if chatWin:IsVisible() then
             chatWin:Hide()
             raidWin:Hide()
@@ -300,24 +366,99 @@ listener:SetScript("OnEvent", function(self, event, ...)
             print("|cffA335EEProChat:|r Ventanas ocultadas por combate.")
         end
 
-    elseif event == "CHAT_MSG_CHANNEL" then
-        local msg, sender, _, _, _, _, _, _, chanName = ...
-        if not chatWin:IsVisible() or not selectedChannelName or not string.find(chanName:upper(), selectedChannelName:upper()) then return end
-        
-        local now = GetTime()
-        if not userMessages[sender] or (now - userMessages[sender] > filterTime) then
-            local msgU = msg:upper(); local matched = nil
-            for _, k in ipairs(keywords) do if string.find(" "..msgU.." ", "[^%a]"..k.."[^%a]") then matched = k; break end end
-            local cat = matched or "TODAS"; local c = filterColors[cat]
-            local formatted = "|cff"..c.."[|r|Hplayer:"..sender.."|h|cff"..c..sender.."|r|h|cff"..c.."]|r: "..msg
-            table.insert(history["TODAS"], formatted)
-            if matched then table.insert(history[matched], formatted); raidGroups[matched][sender] = true; UpdateRaidList() end
-            if selectedContentFilter == "TODAS" or selectedContentFilter == cat then
-                if searchTerm == "" or string.find(formatted:upper(), searchTerm:upper()) then
-                    if not hideGrays or cat ~= "TODAS" then chatWin.text:AddMessage(formatted) end
-                end
-            end
-            userMessages[sender] = now
+ elseif event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_SAY" or event == "CHAT_MSG_YELL" or event == "CHAT_MSG_GUILD" then
+    -- Capturamos hasta el argumento 12 para obtener el GUID
+    local msg, sender, _, _, _, _, _, _, chanName, _, _, guid = ...
+    
+    -- 1. Mapeo manual para eventos de sistema
+    if event == "CHAT_MSG_SAY" then chanName = "Decir"
+    elseif event == "CHAT_MSG_YELL" then chanName = "Gritar"
+    elseif event == "CHAT_MSG_GUILD" then chanName = "Hermandad"
+    end
+
+    if not chatWin:IsVisible() or not chanName then return end
+    
+    local isSelected = false
+    local chanUpper = chanName:upper()
+
+    for selectedName, active in pairs(selectedChannels) do
+        if active and string.find(chanUpper, selectedName:upper()) then
+            isSelected = true
+            break
         end
     end
+
+    if not isSelected then return end
+
+    local now = GetTime()
+    if not userMessages[sender] or (now - userMessages[sender] > filterTime) then
+        local msgU = msg:upper(); local matched = nil
+        for _, k in ipairs(keywords) do if string.find(" "..msgU.." ", "[^%a]"..k.."[^%a]") then matched = k; break end end
+        local cat = matched or "TODAS"; local c = filterColors[cat]
+        
+        local nameColor = c
+        if guid then
+            local _, classUpper = GetPlayerInfoByGUID(guid)
+            if classUpper and classColors[classUpper] then
+                nameColor = classColors[classUpper]
+            end
+        end
+
+        local cleanName = chanName:gsub("%d+%.%s*", ""):upper()
+        local tagData = channelTags[cleanName] or {t=string.sub(cleanName,1,1), c="ffffff"}
+        
+        local dungeonTag = ""
+        if matched then dungeonTag = " |cff"..c.."["..matched.."]|r" end
+
+        local formatted = "|cff"..tagData.c.."["..tagData.t.."]|r |cff"..c.."[|r|Hplayer:"..sender.."|h|cff"..nameColor..sender.."|r|h|cff"..c.."]|r"..dungeonTag..": "..msg
+        
+        table.insert(history["TODAS"], formatted)
+        if matched then 
+            table.insert(history[matched], formatted)
+            raidGroups[matched][sender] = true
+            UpdateRaidList() 
+        end
+
+        if selectedContentFilter == "TODAS" or selectedContentFilter == cat then
+            if searchTerm == "" or string.find(formatted:upper(), searchTerm:upper()) then
+                if not hideGrays or cat ~= "TODAS" then chatWin.text:AddMessage(formatted) end
+            end
+        end
+        userMessages[sender] = now
+    end
+
+if not isSelected then return end
+
+    local now = GetTime()
+    if not userMessages[sender] or (now - userMessages[sender] > filterTime) then
+        local msgU = msg:upper(); local matched = nil
+        for _, k in ipairs(keywords) do if string.find(" "..msgU.." ", "[^%a]"..k.."[^%a]") then matched = k; break end end
+        local cat = matched or "TODAS"; local c = filterColors[cat]
+        
+        local cleanName = chanName:gsub("%d+%.%s*", ""):upper()
+        local tagData = channelTags[cleanName] or {t=string.sub(cleanName,1,1), c="ffffff"}
+        
+        local dungeonTag = ""
+        if matched then
+            dungeonTag = " |cff"..c.."["..matched.."]|r"
+        end
+
+        local formatted = "|cff"..tagData.c.."["..tagData.t.."]|r |cff"..c.."[|r|Hplayer:"..sender.."|h|cff"..c..sender.."|r|h|cff"..c.."]|r"..dungeonTag..": "..msg
+        
+        table.insert(history["TODAS"], formatted)
+        if matched then 
+            table.insert(history[matched], formatted)
+            raidGroups[matched][sender] = true
+            UpdateRaidList() 
+        end
+
+        if selectedContentFilter == "TODAS" or selectedContentFilter == cat then
+            if searchTerm == "" or string.find(formatted:upper(), searchTerm:upper()) then
+                if not hideGrays or cat ~= "TODAS" then chatWin.text:AddMessage(formatted) end
+            end
+        end
+        userMessages[sender] = now
+    end
+end  
 end)
+
