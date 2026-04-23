@@ -1,14 +1,20 @@
 # ProChat v4.2.3 (Stable) - World of Warcraft 3.3.5a
 Asistente avanzado de filtrado de chat y antispam para jugadores de servidores privados 3.3.5 (TrinityCore/AzerothCore).
 
-🚀 Características
-Filtro de Spam Inteligente: Configura tiempos de espera entre mensajes del mismo jugador para mantener el chat limpio.
-Líderes de Raids: Ventana independiente que muestra cuántos líderes por mazmorra están activos buscando jugadores (ICC, RS, TOC, etc.).
-Identificación Visual Avanzada: * Colores de Clase: Los nombres de los jugadores ahora se muestran con su color de clase correspondiente.
-Etiquetas de Mazmorra: Identificador visual coloreado después del nombre para reconocer instantáneamente la estancia del mensaje.
-Sistema Multicanal Extendido: Ahora compatible con Posada/Taberna, Comercio, General, Hermandad, Decir y Gritar.
-Filtrado de Canales Selectivo: Nueva capacidad para seleccionar y filtrar múltiples canales simultáneamente con identificadores de origen en cada mensaje.
-Interfaz Personalizable: Ajuste de escala, filtros de búsqueda avanzados y modo "Ocultar Grises" para filtrar mensajes que no estén relacionados con la formación de grupos (LFG).
+## 🚀 Características Principales
+
+* **Filtro de Spam Inteligente:** Configura tiempos de espera personalizados entre mensajes del mismo jugador para evitar el ruido en el chat.
+* **Monitoreo de Líderes de Raid:** Ventana independiente que contabiliza cuántos líderes están armando activamente por mazmorra (ICC, RS, TOC, etc.).
+* **Identificación Visual Mejorada (v4.2.3):**
+    * **Colores de Clase:** Los nombres de los jugadores ahora se muestran con su color de clase oficial para una identificación rápida.
+    * **Etiquetas de Mazmorra:** Etiquetas visuales coloreadas después del nombre del personaje para reconocer al instante a qué estancia pertenece el reclutamiento.
+* **Sistema Multicanal Extendido:** Soporte completo para canales globales y locales: **Posada/Taberna, Comercio, General, Hermandad, Decir y Gritar**.
+* **Filtrado Inteligente de Canales:**
+    * Selección múltiple de canales para filtrar simultáneamente.
+    * Identificador de canal previo al mensaje para saber exactamente de dónde proviene la información.
+* **Interfaz Altamente Personalizable:** * Ajuste de escala de ventana.
+    * Filtros de búsqueda por palabras clave.
+    * **Modo "Ocultar Grises":** Filtra automáticamente mensajes irrelevantes que no tengan que ver con la búsqueda de grupo (LFG).
 
 ## 🛠️ Instalación
 1. Descarga el archivo `ProChat-3.3.5.zip` desde el botón verde **Code-Download Zip** o desde la sección de **Releases** (Versión actual de ProChat `v4.1.1`).
