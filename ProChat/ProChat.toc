@@ -2,7 +2,7 @@
 ## Title: |cffA335EEProChat 3.3.5|r
 ## Notes: Filtro avanzado de chat y buscador de raids. |cffFF0000By|r |cffC79C6EEl Rey Flahs|r
 ## Author: El Rey Flahs
-## Version: 4.2.3
+## Version: 4.4.2
 ## SavedVariables: ProChatDB
 
 ProChat.lua
